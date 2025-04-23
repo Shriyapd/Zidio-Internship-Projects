@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-Powered Task Optimizer</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #00ffe0;
+      text-shadow: 0 0 10px #00ffe0aa;
+      animation: fadeIn 1s ease-in;
+    }
+
+    .input-section {
+      margin: 2rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      animation: fadeInUp 1s ease-in;
+    }
+
+    .input-section input {
+      padding: 0.8rem;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+    }
+
+    .input-section button {
+      padding: 0.8rem;
+      border: none;
+      border-radius: 10px;
+      background-color: #00ffe0;
+      color: #121212;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .input-section button:hover {
+      background-color: #00c9c0;
+    }
+
+    .result-section, .chart-section {
+      margin: 2rem 0;
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      padding: 1.5rem;
+      animation: fadeInUp 1.2s ease-in;
+    }
+
+    h2 {
+      color: #00ffe0;
+    }
+
+    #recommendations li {
+      text-align: left;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AI Task Optimizer</h1>
+
+    <div class="input-section">
+      <input type="text" id="moodInput" placeholder="How are you feeling?" />
+      <button onclick="analyzeMood()">Analyze Mood</button>
+      <button onclick="detectSpeech()">🎤 Speak Mood</button>
+      <button onclick="detectWebcam()">📷 Detect from Webcam</button>
+    </div>
+
+    <div class="result-section">
+      <h2>Detected Mood:</h2>
+      <p id="detectedMood">-</p>
+
+      <h2>Recommended Tasks:</h2>
+      <ul id="recommendations"></ul>
+    </div>
+
+    <div class="chart-section">
+      <h2>Mood History</h2>
+      <canvas id="moodChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const moodInput = document.getElementById('moodInput');
+    const detectedMood = document.getElementById('detectedMood');
+    const recommendationsList = document.getElementById('recommendations');
+    const moodChartCanvas = document.getElementById('moodChart');
+  
+    let moodChart;
+  
+    function updateChart(moodCounts) {
+      const labels = Object.keys(moodCounts);
+      const data = Object.values(moodCounts);
+  
+      if (moodChart) {
+        moodChart.data.labels = labels;
+        moodChart.data.datasets[0].data = data;
+        moodChart.update();
+      } else {
+        moodChart = new Chart(moodChartCanvas, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Mood Frequency',
+              data: data,
+              backgroundColor: '#00ffe0',
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+    }
+  
+    function showResults(data) {
+      detectedMood.textContent = data.mood || '-';
+      recommendationsList.innerHTML = '';
+      (data.recommendations || []).forEach(task => {
+        const li = document.createElement('li');
+        li.textContent = task;
+        recommendationsList.appendChild(li);
+      });
+      if (data.history) {
+        updateChart(data.history);
+      }
+    }
+  
+    function handleError(error) {
+      alert("Error: " + error);
+      console.error(error);
+    }
+  
+    async function analyzeMood() {
+      const mood = moodInput.value;
+      if (!mood) return alert("Please type your mood!");
+      try {
+        const response = await fetch('http://127.0.0.1:5000/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mood })
+        });
+        const data = await response.json();
+        if (data.error) throw data.error;
+        showResults(data);
+      } catch (err) {
+        handleError(err);
+      }
+    }
+  
+    async function detectSpeech() {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/detect-speech');
+        const data = await response.json();
+        if (data.error) throw data.error;
+        showResults(data);
+      } catch (err) {
+        handleError(err);
+      }
+    }
+  
+    async function detectWebcam() {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/detect-webcam');
+        const data = await response.json();
+        if (data.error) throw data.error;
+        showResults(data);
+      } catch (err) {
+        handleError("Webcam detection failed.");
+      }
+    }
+  
+    window.onload = async function () {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/history');
+        const data = await response.json();
+        if (data.history) {
+          updateChart(data.history);
+        }
+      } catch (err) {
+        console.error("Failed to load mood history:", err);
+      }
+    };
+  </script>  
+</body>
+</html>

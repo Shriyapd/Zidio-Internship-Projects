@@ -1,0 +1,16 @@
+flask
+flask-cors
+nltk
+speechrecognition
+pyaudio ; platform_system == "Windows"
+pipwin ; platform_system == "Windows"
+opencv-python
+deepface
+transformers
+torch
+tensorflow
+moviepy
+pandas
+numpy
+matplotlib
+scipy
