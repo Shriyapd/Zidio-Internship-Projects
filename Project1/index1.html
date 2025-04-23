@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Task Optimizer</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Main Container */
+        .container {
+            background: linear-gradient(135deg, #6e7cfa, #4c63f7);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        /* Form Styling */
+        .input-container {
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            resize: vertical;
+            outline: none;
+            background: #fff;
+            color: #333;
+        }
+
+        textarea:focus {
+            border-color: #4c63f7;
+            box-shadow: 0 0 5px rgba(76, 99, 247, 0.6);
+        }
+
+        /* Button Styling */
+        button {
+            padding: 15px 30px;
+            background-color: #4c63f7;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #3a4acb;
+        }
+
+        /* Result and History Section */
+        .result, .history {
+            margin-top: 20px;
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .history h2 {
+            color: #4c63f7;
+            margin-bottom: 10px;
+        }
+
+        .history p {
+            margin: 5px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Small Device Adjustments */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 28px;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+
+            textarea {
+                font-size: 14px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Powered Task Optimizer</h1>
+        <form id="moodForm">
+            <div class="input-container">
+                <textarea id="userInput" rows="4" placeholder="Describe how you're feeling..."></textarea>
+            </div>
+            <button type="submit">Analyze Mood</button>
+        </form>
+        <div class="result" id="result"></div>
+        <div class="history" id="history"></div>
+    </div>
+
+    <script>
+        document.getElementById('moodForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const userInput = document.getElementById('userInput').value;
+
+            fetch('/analyze', {
+                method: 'POST',
+                body: new URLSearchParams({ 'user_input': userInput }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerHTML = `
+                    <strong>Mood:</strong> ${data.mood}<br>
+                    <strong>Suggested Task:</strong> ${data.task}<br>
+                    <strong>Timestamp:</strong> ${data.timestamp}
+                `;
+            });
+
+            fetch('/history')
+            .then(response => response.json())
+            .then(data => {
+                let historyHtml = '<h2>Recent Mood History</h2>';
+                data.forEach(item => {
+                    historyHtml += `<p>${item[0]} at ${item[1]}</p>`;
+                });
+                document.getElementById('history').innerHTML = historyHtml;
+            });
+        });
+    </script>
+</body>
+</html>
